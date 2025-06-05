@@ -14,9 +14,9 @@ config({ path: "./config.env" });
 
 app.use(
   cors({
-    origin: [process.env.FRONTEND_URL_ONE, process.env.FRONTEND_URL_TWO],
-    method: ["GET", "POST", "DELETE", "PUT"],
+    origin: "http://localhost:5173", // Update with your frontend origin
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
   })
 );
 
@@ -30,6 +30,10 @@ app.use(
     tempFileDir: "/tmp/",
   })
 );
+
+app.get("/",(req,res)=>{
+  res.send("yguhijndmkcuydas")
+})
 app.use("/api/v1/message", messageRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/appointment", appointmentRouter);

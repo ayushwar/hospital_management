@@ -2,6 +2,9 @@ import mongoose from "mongoose";
 import validator from "validator";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config(); // Load .env variables early
 
 const userSchema = new mongoose.Schema({
   firstName: {
@@ -44,14 +47,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, "Password Is Required!"],
     minLength: [8, "Password Must Contain At Least 8 Characters!"],
-    select: false,
+    select: false, // exclude password by default in queries
   },
   role: {
     type: String,
-    required: [true, "User Role Required!"],
     enum: ["Patient", "Doctor", "Admin"],
+    required: [true, "User Role Required!"],
   },
-  doctorDepartment:{
+  doctorDepartment: {
     type: String,
   },
   docAvatar: {
@@ -60,20 +63,27 @@ const userSchema = new mongoose.Schema({
   },
 });
 
+// Hash password before saving, only if modified
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
-    next();
+    return next();
   }
   this.password = await bcrypt.hash(this.password, 10);
+  next();
 });
 
+// Compare entered password with hashed password in DB
 userSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+// Generate JWT token using secret and expiry from env variables
 userSchema.methods.generateJsonWebToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET_KEY, {
-    expiresIn: process.env.JWT_EXPIRES,
+  const secret = process.env.JWT_SECRET_KEY || "defaultSecretKey";
+  const expiresIn = process.env.JWT_EXPIRES || "7d";
+
+  return jwt.sign({ id: this._id, role: this.role }, secret, {
+    expiresIn,
   });
 };
 
